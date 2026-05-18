@@ -3,8 +3,20 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { TerminalText } from '@/components/ui/TerminalText';
+import { useStore } from '@/lib/store';
+import { getTradeGain } from '@/lib/utils';
 
 export function Hero() {
+  const { trades } = useStore();
+
+  // Compute live stats from store
+  const totalTrades = trades.length;
+  const winners = trades.filter((t) => getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction) > 0);
+  const winRate = totalTrades > 0 ? Math.round((winners.length / totalTrades) * 100) : 0;
+  const avgReturn = totalTrades > 0
+    ? Math.round(trades.reduce((sum, t) => sum + getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction), 0) / totalTrades)
+    : 0;
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated background grid */}
@@ -70,13 +82,7 @@ export function Hero() {
             href="/dashboard/"
             className="px-8 py-3 bg-schmal-accent text-schmal-darker font-mono font-bold text-sm tracking-wider rounded-lg hover:bg-schmal-accent/90 transition-all glow-accent"
           >
-            ENTER TERMINAL
-          </Link>
-          <Link
-            href="/dashboard/"
-            className="px-8 py-3 border border-schmal-border text-schmal-text font-mono font-medium text-sm tracking-wider rounded-lg hover:border-schmal-accent/50 hover:text-schmal-accent transition-all"
-          >
-            VIEW LEDGER
+            VIEW THE LIST
           </Link>
         </motion.div>
 
@@ -88,10 +94,10 @@ export function Hero() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
         >
           {[
-            { label: 'TOTAL TRADES', value: '8', sub: 'logged' },
-            { label: 'WIN RATE', value: '75%', sub: 'accuracy' },
-            { label: 'AVG RETURN', value: '+36%', sub: 'per position' },
-            { label: 'SHARPE', value: '2.14', sub: 'ratio' },
+            { label: 'TOTAL TRADES', value: `${totalTrades}`, sub: 'logged' },
+            { label: 'WIN RATE', value: `${winRate}%`, sub: 'accuracy' },
+            { label: 'AVG RETURN', value: `${avgReturn >= 0 ? '+' : ''}${avgReturn}%`, sub: 'per position' },
+            { label: 'POSITIONS', value: `${trades.filter(t => t.status === 'OPEN').length}`, sub: 'open' },
           ].map((stat) => (
             <div key={stat.label} className="glass-card p-4 text-center">
               <p className="text-2xl md:text-3xl font-bold font-mono text-schmal-accent">
