@@ -1,9 +1,7 @@
 /**
- * Fetches live stock prices using Yahoo Finance chart API via CORS proxy.
- * Falls back gracefully if the API is unavailable.
+ * Fetches live stock prices from Yahoo Finance.
+ * Tries direct request first, then CORS proxy as fallback.
  */
-
-const CORS_PROXY = 'https://corsproxy.io/?';
 
 interface YahooChartResult {
   chart?: {
@@ -16,11 +14,28 @@ interface YahooChartResult {
   };
 }
 
-export async function fetchLivePrice(symbol: string): Promise<number | null> {
+async function tryFetch(url: string): Promise<Response | null> {
   try {
-    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
-    const res = await fetch(`${CORS_PROXY}${encodeURIComponent(yahooUrl)}`);
-    if (!res.ok) return null;
+    const res = await fetch(url);
+    if (res.ok) return res;
+  } catch { /* ignore */ }
+  return null;
+}
+
+export async function fetchLivePrice(symbol: string): Promise<number | null> {
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+
+  // Try direct first (works in some browsers)
+  let res = await tryFetch(yahooUrl);
+
+  // Fallback: CORS proxy (only works from browsers, not server-side)
+  if (!res) {
+    res = await tryFetch(`https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`);
+  }
+
+  if (!res) return null;
+
+  try {
     const data: YahooChartResult = await res.json();
     return data.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
   } catch {
@@ -32,17 +47,12 @@ export async function fetchLivePrices(symbols: string[]): Promise<Record<string,
   const unique = Array.from(new Set(symbols));
   const results: Record<string, number> = {};
 
-  // Fetch in parallel (max 5 concurrent)
-  const batchSize = 5;
-  for (let i = 0; i < unique.length; i += batchSize) {
-    const batch = unique.slice(i, i + batchSize);
-    const prices = await Promise.all(batch.map(fetchLivePrice));
-    batch.forEach((sym, idx) => {
-      if (prices[idx] !== null) {
-        results[sym] = prices[idx]!;
-      }
-    });
-  }
+  const prices = await Promise.all(unique.map(fetchLivePrice));
+  unique.forEach((sym, idx) => {
+    if (prices[idx] !== null) {
+      results[sym] = prices[idx]!;
+    }
+  });
 
   return results;
 }

@@ -1,20 +1,42 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { TerminalText } from '@/components/ui/TerminalText';
 import { useStore } from '@/lib/store';
 import { getTradeGain } from '@/lib/utils';
+import { fetchLivePrices } from '@/lib/priceService';
+import { Trade } from '@/lib/types';
 
 export function Hero() {
   const { trades } = useStore();
+  const [liveTrades, setLiveTrades] = useState<Trade[]>([]);
 
-  // Compute live stats from store
-  const totalTrades = trades.length;
-  const winners = trades.filter((t) => getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction) > 0);
+  useEffect(() => {
+    if (trades.length === 0) return;
+    const openSymbols = trades.filter((t) => t.status === 'OPEN').map((t) => t.symbol);
+    if (openSymbols.length === 0) {
+      setLiveTrades(trades);
+      return;
+    }
+    fetchLivePrices(openSymbols).then((prices) => {
+      setLiveTrades(
+        trades.map((t) =>
+          t.status === 'OPEN' && prices[t.symbol]
+            ? { ...t, currentPrice: prices[t.symbol] }
+            : t
+        )
+      );
+    });
+  }, [trades]);
+
+  // Compute live stats
+  const totalTrades = liveTrades.length;
+  const winners = liveTrades.filter((t) => getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction) > 0);
   const winRate = totalTrades > 0 ? Math.round((winners.length / totalTrades) * 100) : 0;
   const avgReturn = totalTrades > 0
-    ? Math.round(trades.reduce((sum, t) => sum + getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction), 0) / totalTrades)
+    ? Math.round(liveTrades.reduce((sum, t) => sum + getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction), 0) / totalTrades)
     : 0;
 
   return (
@@ -97,7 +119,7 @@ export function Hero() {
             { label: 'TOTAL TRADES', value: `${totalTrades}`, sub: 'logged' },
             { label: 'WIN RATE', value: `${winRate}%`, sub: 'accuracy' },
             { label: 'AVG RETURN', value: `${avgReturn >= 0 ? '+' : ''}${avgReturn}%`, sub: 'per position' },
-            { label: 'POSITIONS', value: `${trades.filter(t => t.status === 'OPEN').length}`, sub: 'open' },
+            { label: 'POSITIONS', value: `${liveTrades.filter(t => t.status === 'OPEN').length}`, sub: 'open' },
           ].map((stat) => (
             <div key={stat.label} className="glass-card p-4 text-center">
               <p className="text-2xl md:text-3xl font-bold font-mono text-schmal-accent">

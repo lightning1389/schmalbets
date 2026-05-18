@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TickerBar } from '@/components/landing/TickerBar';
 import { PerformanceMetrics } from '@/components/dashboard/PerformanceMetrics';
@@ -11,6 +12,7 @@ import { STOCKS, SECTOR_PERFORMANCE } from '@/lib/mockData';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { getTradeGain, getTradeGainValue } from '@/lib/utils';
 import { PortfolioMetrics, Trade } from '@/lib/types';
+import { fetchLivePrices } from '@/lib/priceService';
 
 function computeMetrics(trades: Trade[]): PortfolioMetrics {
   if (trades.length === 0) {
@@ -48,7 +50,26 @@ function computeMetrics(trades: Trade[]): PortfolioMetrics {
 
 export default function DashboardPage() {
   const { trades, watchlist } = useStore();
-  const metrics = computeMetrics(trades);
+  const [liveTrades, setLiveTrades] = useState<Trade[]>([]);
+
+  useEffect(() => {
+    if (trades.length === 0) return;
+    const openSymbols = trades.filter((t) => t.status === 'OPEN').map((t) => t.symbol);
+    if (openSymbols.length === 0) {
+      setLiveTrades(trades);
+      return;
+    }
+    fetchLivePrices(openSymbols).then((prices) => {
+      const updated = trades.map((t) =>
+        t.status === 'OPEN' && prices[t.symbol]
+          ? { ...t, currentPrice: prices[t.symbol] }
+          : t
+      );
+      setLiveTrades(updated);
+    });
+  }, [trades]);
+
+  const metrics = computeMetrics(liveTrades);
 
   return (
     <div className="pt-16">
@@ -90,7 +111,7 @@ export default function DashboardPage() {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <ActivePositions trades={trades} />
+          <ActivePositions trades={liveTrades} />
         </motion.div>
 
         {/* Two column layout */}
@@ -162,7 +183,7 @@ export default function DashboardPage() {
                 RECENT ACTIVITY
               </h3>
               <div className="space-y-4">
-                {trades.slice(0, 5).map((trade) => (
+                {liveTrades.slice(0, 5).map((trade) => (
                   <div key={trade.id} className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
                       <div className={`w-2 h-2 rounded-full ${
