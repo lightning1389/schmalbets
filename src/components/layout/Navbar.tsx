@@ -12,7 +12,6 @@ export function Navbar() {
   const links = [
     { href: '/', label: 'HOME' },
     { href: '/dashboard/', label: 'DASHBOARD' },
-    { href: '/trades/', label: 'LEDGER' },
     { href: '/admin/', label: admin.authenticated ? '◆ ADMIN' : 'ADMIN' },
   ];
 

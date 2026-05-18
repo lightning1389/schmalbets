@@ -73,7 +73,7 @@ export function Hero() {
             ENTER TERMINAL
           </Link>
           <Link
-            href="/trades/"
+            href="/dashboard/"
             className="px-8 py-3 border border-schmal-border text-schmal-text font-mono font-medium text-sm tracking-wider rounded-lg hover:border-schmal-accent/50 hover:text-schmal-accent transition-all"
           >
             VIEW LEDGER

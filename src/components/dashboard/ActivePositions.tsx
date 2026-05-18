@@ -24,7 +24,7 @@ export function ActivePositions({ trades }: ActivePositionsProps) {
           </p>
         </div>
         <Link
-          href="/trades/"
+          href="/dashboard/"
           className="text-[10px] font-mono text-schmal-accent hover:underline"
         >
           VIEW ALL →

@@ -7,11 +7,48 @@ import { ActivePositions } from '@/components/dashboard/ActivePositions';
 import { StockCard } from '@/components/dashboard/StockCard';
 import { Watchlist } from '@/components/dashboard/Watchlist';
 import { useStore } from '@/lib/store';
-import { STOCKS, PORTFOLIO_METRICS, SECTOR_PERFORMANCE } from '@/lib/mockData';
+import { STOCKS, SECTOR_PERFORMANCE } from '@/lib/mockData';
 import { GlowCard } from '@/components/ui/GlowCard';
+import { getTradeGain, getTradeGainValue } from '@/lib/utils';
+import { PortfolioMetrics, Trade } from '@/lib/types';
+
+function computeMetrics(trades: Trade[]): PortfolioMetrics {
+  if (trades.length === 0) {
+    return { totalValue: 0, totalGain: 0, totalGainPercent: 0, winRate: 0, totalTrades: 0, openPositions: 0, bestTrade: { symbol: '-', gain: 0 }, worstTrade: { symbol: '-', gain: 0 }, avgHoldingDays: 0, sharpeRatio: 0 };
+  }
+
+  const totalValue = trades.reduce((sum, t) => sum + t.currentPrice * t.shares, 0);
+  const totalCost = trades.reduce((sum, t) => sum + t.entryPrice * t.shares, 0);
+  const totalGain = trades.reduce((sum, t) => sum + getTradeGainValue(t.entryPrice, t.currentPrice, t.shares, t.direction), 0);
+  const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+
+  const winners = trades.filter((t) => getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction) > 0);
+  const winRate = (winners.length / trades.length) * 100;
+
+  const openPositions = trades.filter((t) => t.status === 'OPEN').length;
+
+  let best = { symbol: trades[0].symbol, gain: getTradeGain(trades[0].entryPrice, trades[0].exitPrice ?? trades[0].currentPrice, trades[0].direction) };
+  let worst = { ...best };
+  trades.forEach((t) => {
+    const gain = getTradeGain(t.entryPrice, t.exitPrice ?? t.currentPrice, t.direction);
+    if (gain > best.gain) best = { symbol: t.symbol, gain };
+    if (gain < worst.gain) worst = { symbol: t.symbol, gain };
+  });
+
+  const now = Date.now();
+  const avgHoldingDays = Math.round(
+    trades.reduce((sum, t) => {
+      const end = t.exitDate ? new Date(t.exitDate).getTime() : now;
+      return sum + (end - new Date(t.entryDate).getTime()) / (1000 * 60 * 60 * 24);
+    }, 0) / trades.length
+  );
+
+  return { totalValue, totalGain, totalGainPercent, winRate, totalTrades: trades.length, openPositions, bestTrade: best, worstTrade: worst, avgHoldingDays, sharpeRatio: 0 };
+}
 
 export default function DashboardPage() {
   const { trades, watchlist } = useStore();
+  const metrics = computeMetrics(trades);
 
   return (
     <div className="pt-16">
@@ -43,7 +80,7 @@ export default function DashboardPage() {
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <PerformanceMetrics metrics={PORTFOLIO_METRICS} />
+          <PerformanceMetrics metrics={metrics} />
         </motion.div>
 
         {/* Active Positions */}
