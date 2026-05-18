@@ -1,0 +1,161 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { TickerBar } from '@/components/landing/TickerBar';
+import { PerformanceMetrics } from '@/components/dashboard/PerformanceMetrics';
+import { ActivePositions } from '@/components/dashboard/ActivePositions';
+import { StockCard } from '@/components/dashboard/StockCard';
+import { Watchlist } from '@/components/dashboard/Watchlist';
+import { useStore } from '@/lib/store';
+import { STOCKS, PORTFOLIO_METRICS, SECTOR_PERFORMANCE } from '@/lib/mockData';
+import { GlowCard } from '@/components/ui/GlowCard';
+
+export default function DashboardPage() {
+  const { trades, watchlist } = useStore();
+
+  return (
+    <div className="pt-16">
+      <TickerBar />
+
+      <div className="container-schmal py-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-2 h-2 rounded-full bg-schmal-profit animate-pulse" />
+            <h1 className="text-xs font-mono text-schmal-muted tracking-[0.3em]">
+              TRADING TERMINAL
+            </h1>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold">Dashboard</h2>
+          <p className="text-sm text-schmal-muted mt-1 font-mono">
+            Portfolio overview — The Schmal&apos;s active operations
+          </p>
+        </motion.div>
+
+        {/* Metrics */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <PerformanceMetrics metrics={PORTFOLIO_METRICS} />
+        </motion.div>
+
+        {/* Active Positions */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <ActivePositions trades={trades} />
+        </motion.div>
+
+        {/* Two column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Tracked Stocks */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:col-span-2"
+          >
+            <h3 className="text-xs font-mono font-bold text-schmal-muted tracking-widest mb-4">
+              TRACKED STOCKS
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {STOCKS.slice(0, 6).map((stock) => (
+                <StockCard key={stock.symbol} stock={stock} />
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Watchlist */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Watchlist items={watchlist} />
+          </motion.div>
+        </div>
+
+        {/* Sector overview & recent activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Sector Performance */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <GlowCard glowColor="accent">
+              <h3 className="text-xs font-mono font-bold text-schmal-muted tracking-widest mb-6">
+                SECTOR ALLOCATION
+              </h3>
+              <div className="space-y-3">
+                {SECTOR_PERFORMANCE.map((sector) => (
+                  <div key={sector.sector} className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: sector.color }} />
+                    <span className="text-xs font-mono text-schmal-text flex-1">{sector.sector}</span>
+                    <span
+                      className="text-xs font-mono font-bold"
+                      style={{ color: sector.performance >= 0 ? '#00ff88' : '#ff4444' }}
+                    >
+                      {sector.performance >= 0 ? '+' : ''}{sector.performance}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </GlowCard>
+          </motion.div>
+
+          {/* Recent Activity Timeline */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <GlowCard glowColor="accent">
+              <h3 className="text-xs font-mono font-bold text-schmal-muted tracking-widest mb-6">
+                RECENT ACTIVITY
+              </h3>
+              <div className="space-y-4">
+                {trades.slice(0, 5).map((trade) => (
+                  <div key={trade.id} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-2 h-2 rounded-full ${
+                        trade.direction === 'BUY' ? 'bg-schmal-profit' : 'bg-schmal-loss'
+                      }`} />
+                      <div className="w-px h-8 bg-schmal-border" />
+                    </div>
+                    <div className="flex-1 -mt-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono font-bold ${
+                          trade.direction === 'BUY' ? 'text-schmal-profit' : 'text-schmal-loss'
+                        }`}>
+                          {trade.direction}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-white">{trade.symbol}</span>
+                        <span className="text-[10px] font-mono text-schmal-muted">
+                          @ ${trade.entryPrice.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-schmal-muted mt-0.5 truncate">
+                        {trade.thesis.slice(0, 80)}...
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlowCard>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
