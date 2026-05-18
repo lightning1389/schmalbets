@@ -284,6 +284,7 @@ function NewTradeForm({
     direction: 'BUY' as TradeDirection,
     entryPrice: '',
     shares: '',
+    buyDate: new Date().toISOString().split('T')[0],
     conviction: 3 as Conviction,
     sentiment: 'BULLISH' as Sentiment,
     sector: 'Technology' as Sector,
@@ -309,7 +310,7 @@ function NewTradeForm({
       conviction: form.conviction,
       sentiment: form.sentiment,
       sector: form.sector,
-      entryDate: now.split('T')[0],
+      entryDate: form.buyDate,
       createdAt: now,
       updatedAt: now,
       thesis: form.thesis,
@@ -362,7 +363,7 @@ function NewTradeForm({
           </FormField>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <FormField label="ENTRY PRICE" required>
             <input
               type="number"
@@ -381,6 +382,15 @@ function NewTradeForm({
               value={form.shares}
               onChange={(e) => setForm({ ...form, shares: e.target.value })}
               placeholder="100"
+              className="form-input"
+            />
+          </FormField>
+          <FormField label="BUY DATE" required>
+            <input
+              type="date"
+              required
+              value={form.buyDate}
+              onChange={(e) => setForm({ ...form, buyDate: e.target.value })}
               className="form-input"
             />
           </FormField>
