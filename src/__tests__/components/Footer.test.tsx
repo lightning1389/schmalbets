@@ -10,8 +10,7 @@ describe('Footer', () => {
 
   it('renders navigation links', () => {
     render(<Footer />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Trade Ledger')).toBeInTheDocument();
+    expect(screen.getByText('SchmalStreets List')).toBeInTheDocument();
     expect(screen.getByText('Market Intel')).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
   });

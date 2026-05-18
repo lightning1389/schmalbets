@@ -27,7 +27,7 @@ export function Footer() {
               NAVIGATION
             </h4>
             <div className="flex flex-col gap-2">
-              {['Dashboard', 'Market Intel', 'Admin'].map((item) => (
+              {['SchmalStreets List', 'Market Intel', 'Admin'].map((item) => (
                 <span key={item} className="text-xs text-schmal-text hover:text-schmal-accent cursor-pointer transition-colors">
                   {item}
                 </span>
