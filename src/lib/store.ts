@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Trade, WatchlistItem, AdminUser } from './types';
-import { TRADES, WATCHLIST } from './mockData';
 import { clientFetchTrades, clientFetchWatchlist, writeTrade, deleteTrade, updateTrade as fbUpdateTrade, seedDatabase } from './dataFetcher';
 import { signInWithEmail } from './firebase';
 
@@ -22,8 +21,8 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set, get) => ({
-  trades: TRADES,
-  watchlist: WATCHLIST,
+  trades: [],
+  watchlist: [],
   admin: { authenticated: false, sessionExpiry: 0 },
   authToken: null,
   dataLoaded: false,

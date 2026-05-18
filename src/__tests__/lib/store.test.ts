@@ -26,9 +26,9 @@ describe('Store', () => {
   });
 
   describe('trades', () => {
-    it('has initial trades loaded', () => {
+    it('starts with empty trades before loading', () => {
       const { result } = renderHook(() => useStore());
-      expect(result.current.trades.length).toBeGreaterThan(0);
+      expect(result.current.trades.length).toBe(0);
     });
 
     it('can add a trade when authenticated', async () => {
@@ -176,9 +176,9 @@ describe('Store', () => {
   });
 
   describe('watchlist', () => {
-    it('has initial watchlist items', () => {
+    it('starts with empty watchlist before loading', () => {
       const { result } = renderHook(() => useStore());
-      expect(result.current.watchlist.length).toBeGreaterThan(0);
+      expect(result.current.watchlist.length).toBe(0);
     });
 
     it('can add to watchlist', () => {

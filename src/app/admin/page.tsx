@@ -8,7 +8,7 @@ import { Trade, TradeDirection, Conviction, Sentiment, Sector } from '@/lib/type
 import { formatCurrency, formatDate, getConvictionLabel, getConvictionColor } from '@/lib/utils';
 
 export default function AdminPage() {
-  const { admin, trades, login, logout, addTrade, removeTrade, seedData } = useStore();
+  const { admin, trades, login, logout, addTrade, removeTrade, updateTrade, seedData } = useStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -17,6 +17,19 @@ export default function AdminPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [priceInput, setPriceInput] = useState('');
+
+  const handleUpdatePrice = async (tradeId: string) => {
+    const price = parseFloat(priceInput);
+    if (isNaN(price) || price <= 0) return;
+    setActionStatus('Updating price...');
+    const success = await updateTrade(tradeId, { currentPrice: price, updatedAt: new Date().toISOString() });
+    setActionStatus(success ? 'Price updated!' : 'Failed to update');
+    setEditingPrice(null);
+    setPriceInput('');
+    setTimeout(() => setActionStatus(null), 2000);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,7 +254,41 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td>{formatCurrency(trade.entryPrice)}</td>
-                    <td>{formatCurrency(trade.exitPrice ?? trade.currentPrice)}</td>
+                    <td>
+                      {editingPrice === trade.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={priceInput}
+                            onChange={(e) => setPriceInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdatePrice(trade.id);
+                              if (e.key === 'Escape') setEditingPrice(null);
+                            }}
+                            className="w-20 px-2 py-1 bg-schmal-surface border border-schmal-accent/50 rounded text-xs font-mono text-white"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleUpdatePrice(trade.id)}
+                            className="text-[10px] text-schmal-profit font-bold"
+                          >
+                            ✓
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingPrice(trade.id);
+                            setPriceInput(String(trade.exitPrice ?? trade.currentPrice));
+                          }}
+                          className="text-schmal-accent hover:underline cursor-pointer"
+                          title="Click to update price"
+                        >
+                          {formatCurrency(trade.exitPrice ?? trade.currentPrice)}
+                        </button>
+                      )}
+                    </td>
                     <td>
                       <span style={{ color: getConvictionColor(trade.conviction) }}>
                         {getConvictionLabel(trade.conviction)}

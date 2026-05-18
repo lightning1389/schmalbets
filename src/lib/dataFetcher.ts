@@ -18,9 +18,9 @@ export async function clientFetchTrades(): Promise<Trade[]> {
   try {
     const data = await dbRead<Record<string, Trade>>('trades');
     const trades = objectToArray(data);
-    return trades.length > 0 ? trades : TRADES;
+    return trades;
   } catch {
-    return TRADES;
+    return [];
   }
 }
 
@@ -38,9 +38,9 @@ export async function clientFetchWatchlist(): Promise<WatchlistItem[]> {
   try {
     const data = await dbRead<Record<string, WatchlistItem>>('watchlist');
     const items = objectToArray(data);
-    return items.length > 0 ? items : WATCHLIST;
+    return items;
   } catch {
-    return WATCHLIST;
+    return [];
   }
 }
 
