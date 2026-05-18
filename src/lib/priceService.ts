@@ -1,7 +1,9 @@
 /**
- * Fetches live stock prices from Yahoo Finance chart API.
+ * Fetches live stock prices using Yahoo Finance chart API via CORS proxy.
  * Falls back gracefully if the API is unavailable.
  */
+
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 interface YahooChartResult {
   chart?: {
@@ -16,8 +18,8 @@ interface YahooChartResult {
 
 export async function fetchLivePrice(symbol: string): Promise<number | null> {
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
-    const res = await fetch(url);
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    const res = await fetch(`${CORS_PROXY}${encodeURIComponent(yahooUrl)}`);
     if (!res.ok) return null;
     const data: YahooChartResult = await res.json();
     return data.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
