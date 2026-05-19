@@ -80,8 +80,8 @@ export interface MarketOverview {
 export async function fetchMarketOverview(): Promise<MarketOverview | null> {
   try {
     const [vixChart, spxChart] = await Promise.all([
-      yahooChart('%5EVIX', '5d'),
-      yahooChart('%5EGSPC', '5d'),
+      yahooChart('^VIX', '5d'),
+      yahooChart('^GSPC', '5d'),
     ]);
     const vixMeta = vixChart?.result?.[0]?.meta;
     const spxMeta = spxChart?.result?.[0]?.meta;
