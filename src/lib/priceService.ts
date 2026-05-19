@@ -110,20 +110,55 @@ export interface FearGreedData {
   label: string;
 }
 
+function fgLabel(value: number): string {
+  if (value <= 25) return 'EXTREME FEAR';
+  if (value <= 45) return 'FEAR';
+  if (value <= 55) return 'NEUTRAL';
+  if (value <= 75) return 'GREED';
+  return 'EXTREME GREED';
+}
+
+/** Compute a synthetic score from VIX (inverted scale). */
+export function computeFearGreedFromVix(vix: number): FearGreedData {
+  // VIX roughly maps: <12 → extreme greed, 12-16 → greed, 16-20 → neutral,
+  // 20-30 → fear, >30 → extreme fear
+  let value: number;
+  if (vix <= 12) value = 90;
+  else if (vix <= 16) value = 75 - ((vix - 12) / 4) * 10; // 75→65
+  else if (vix <= 20) value = 55 - ((vix - 16) / 4) * 10; // 55→45
+  else if (vix <= 30) value = 40 - ((vix - 20) / 10) * 15; // 40→25
+  else value = Math.max(0, 25 - ((vix - 30) / 20) * 25); // 25→0
+  value = Math.round(Math.min(100, Math.max(0, value)));
+  return { value, label: fgLabel(value) };
+}
+
 export async function fetchFearGreed(): Promise<FearGreedData | null> {
+  // 1. Try CNN Fear & Greed API (stock-market based)
   try {
-    const res = await tryFetch('https://api.alternative.me/fng/?limit=1');
-    if (!res) return null;
-    const data = await res.json();
-    const entry = data?.data?.[0];
-    if (!entry) return null;
-    return {
-      value: parseInt(entry.value, 10),
-      label: entry.value_classification?.toUpperCase() ?? 'NEUTRAL',
-    };
-  } catch {
-    return null;
-  }
+    let res = await tryFetch('https://production.dataviz.cnn.io/index/fearandgreed/graphdata');
+    if (!res) {
+      res = await tryFetch(
+        `https://corsproxy.io/?${encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata')}`
+      );
+    }
+    if (res) {
+      const data = await res.json();
+      const score = data?.fear_and_greed?.score;
+      if (typeof score === 'number') {
+        const value = Math.round(score);
+        return { value, label: fgLabel(value) };
+      }
+    }
+  } catch { /* fall through */ }
+
+  // 2. Fallback: derive from VIX
+  try {
+    const chart = await yahooChart('^VIX');
+    const vix = chart?.result?.[0]?.meta?.regularMarketPrice;
+    if (typeof vix === 'number') return computeFearGreedFromVix(vix);
+  } catch { /* ignore */ }
+
+  return null;
 }
 
 // ─── SECTOR PERFORMANCE (via sector ETFs) ───────────────────────
