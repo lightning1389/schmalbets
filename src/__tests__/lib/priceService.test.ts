@@ -30,7 +30,7 @@ describe('priceService', () => {
       const price = await fetchLivePrice('ASTS');
       expect(price).toBe(35.42);
       expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch.mock.calls[0][0]).toContain('corsproxy.io');
+      expect(mockFetch.mock.calls[0][0]).toContain('finance.yahoo.com');
       expect(mockFetch.mock.calls[0][0]).toContain('ASTS');
     });
 
